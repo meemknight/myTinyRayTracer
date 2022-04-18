@@ -116,9 +116,80 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 
 #pragma endregion
 
-	
+	static glm::vec3 pos = {};
+
+	{
+		glm::vec3 moveVector{};
+
+		if (input->keyBoard[Button::W].held)
+		{
+			moveVector.z -= 1.f;
+		}
+		if (input->keyBoard[Button::S].held)
+		{
+			moveVector.z += 1.f;
+		}
+		if (input->keyBoard[Button::A].held)
+		{
+			moveVector.x -= 1.f;
+		}
+		if (input->keyBoard[Button::D].held)
+		{
+			moveVector.x += 1.f;
+		}
+		if (input->keyBoard[Button::R].held)
+		{
+			moveVector.y += 1.f;
+		}
+		if (input->keyBoard[Button::F].held)
+		{
+			moveVector.y -= 1.f;
+		}
+
+		moveVector *= deltaTime * 10;
+		pos += moveVector;
+	}
+
+	static float Yrotation = 0.f;
+	static float Xrotation = 0.f;
+
+	{
+		constexpr float PI = 3.1415926;
+		
+
+		glm::vec2 mousePos = {input->mouseX, input->mouseY};
+		static glm::vec2 lastMousePos = {};
+
+		if (input->rightMouse.held)
+		{
+			glm::vec2 delta = mousePos - lastMousePos;
+			delta.x /= w;
+			delta.y /= h;
+			
+			delta *= deltaTime * PI * 10;
+
+			Yrotation += delta.x;
+			Xrotation += delta.y;
+
+			if (Yrotation < -PI / 2.f)
+			{
+				Yrotation = -PI / 2.f;
+			}
+			if (Yrotation > PI / 2.f)
+			{
+				Yrotation = PI / 2.f;
+			}
+		}
+
+		lastMousePos = mousePos;
+	}
+
 	float fov = glm::radians(60.f);
 	float exposure = 1.0f;
+
+	glm::vec3 lookVector = fromAnglesToDirection(Xrotation, Yrotation);
+	auto lookMatrix = NormalToRotation(lookVector);
+
 
 	for (int j = 0; j < h; j++)
 	{
@@ -127,9 +198,9 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 			float x = (2 * (i + 0.5) / (float)w - 1) * tan(fov / 2.) * w / (float)h;
 			float y = -(2 * (j + 0.5) / (float)h - 1) * tan(fov / 2.);
 			glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
+			dir = glm::normalize(lookMatrix * dir);
 			
-			
-			auto color = mem->rayTracer.renderRay({}, dir, 5);
+			auto color = mem->rayTracer.renderRay(pos, dir, 5);
 
 			//hdr tone mapping
 			color = glm::vec3(1.f) - exp(-color * exposure);
