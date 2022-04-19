@@ -78,9 +78,11 @@ inline glm::mat3 NormalToRotation(glm::vec3 normal)
 	//return ColumnVectorsToMatrix(tangent0, tangent1, normal);
 }
 
+
+
 inline glm::vec3 fromAnglesToDirection(float zenith, float azimuth)
 {
-	glm::vec4 vec(0, 0, -1, 0);
+	glm::vec4 vec(0, 0, 1, 0);
 
 	auto zenithRotate = glm::rotate(-zenith, glm::vec3(1.f, 0.f, 0.f));
 	vec = zenithRotate * vec;

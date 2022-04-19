@@ -79,6 +79,8 @@ extern "C" __declspec(dllexport) void onCreate(GameMemory * mem, HeapMemory * he
 	mem->rayTracer.spheres.push_back({{-0.3,1,-8}, 1.f, glm::vec3(0.6,0.3,0.34), 0.8, 0.1});
 	mem->rayTracer.spheres.push_back({{4,1,-7}, 1.f, glm::vec3(0.2,0.6,0.24), 0, 0.5});
 	mem->rayTracer.spheres.push_back({{4.3,-1,-4}, 0.5f, glm::vec3(0.6,0.1,0.64), 0.2, 0.8});
+	mem->rayTracer.spheres.push_back({{-4.3,-1,4}, 1.f, glm::vec3(0.8,0.4,0.5), 0, 0.9});
+	mem->rayTracer.spheres.push_back({{4.3,1,4}, 1.f, glm::vec3(0.8,0.4,0.9), 0.9, 0.9});
 	mem->rayTracer.pointLights.push_back({glm::vec3(-10, 2, 2), 4.f});
 
 	
@@ -118,6 +120,9 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 
 	static glm::vec3 pos = {};
 
+	static float Yrotation = 0.f;
+	static float Xrotation = 0.f;
+
 	{
 		glm::vec3 moveVector{};
 
@@ -147,11 +152,17 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 		}
 
 		moveVector *= deltaTime * 10;
-		pos += moveVector;
-	}
+	
+		glm::vec3 lookVector = glm::rotate(Yrotation, glm::vec3(0, 1, 0)) * glm::vec4{0,0,-1, 0};
+		glm::vec3 rightVector = glm::cross(lookVector, glm::vec3(0, 1, 0));
 
-	static float Yrotation = 0.f;
-	static float Xrotation = 0.f;
+		glm::vec3 moveVectorViewSpace = lookVector * -moveVector.z;
+		moveVectorViewSpace += rightVector * moveVector.x;
+		moveVectorViewSpace += glm::vec3(0, 1, 0) * moveVector.y;
+
+		pos += moveVectorViewSpace;
+
+	}
 
 	{
 		constexpr float PI = 3.1415926;
@@ -166,18 +177,18 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 			delta.x /= w;
 			delta.y /= h;
 			
-			delta *= deltaTime * PI * 10;
+			delta *= deltaTime * PI * 20;
 
-			Yrotation += delta.x;
-			Xrotation += delta.y;
+			Yrotation -= delta.x;
+			Xrotation -= delta.y;
 
-			if (Yrotation < -PI / 2.f)
+			if (Xrotation < -PI / 2.f)
 			{
-				Yrotation = -PI / 2.f;
+				Xrotation = -PI / 2.f;
 			}
-			if (Yrotation > PI / 2.f)
+			if (Xrotation > PI / 2.f)
 			{
-				Yrotation = PI / 2.f;
+				Xrotation = PI / 2.f;
 			}
 		}
 
@@ -187,8 +198,9 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 	float fov = glm::radians(60.f);
 	float exposure = 1.0f;
 
-	glm::vec3 lookVector = fromAnglesToDirection(Xrotation, Yrotation);
-	auto lookMatrix = NormalToRotation(lookVector);
+	auto yRotationMatrix = glm::rotate(Yrotation, glm::vec3{0,1.f,0});
+	auto xRotationMatrix = glm::rotate(Xrotation, glm::vec3{1.f,0.f,0});
+	auto lookMatrix = yRotationMatrix * xRotationMatrix;
 
 
 	for (int j = 0; j < h; j++)
@@ -198,7 +210,7 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 			float x = (2 * (i + 0.5) / (float)w - 1) * tan(fov / 2.) * w / (float)h;
 			float y = -(2 * (j + 0.5) / (float)h - 1) * tan(fov / 2.);
 			glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
-			dir = glm::normalize(lookMatrix * dir);
+			dir = glm::normalize(lookMatrix * glm::vec4(dir,0));
 			
 			auto color = mem->rayTracer.renderRay(pos, dir, 5);
 
