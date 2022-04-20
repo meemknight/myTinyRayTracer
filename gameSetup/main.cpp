@@ -83,6 +83,21 @@ extern "C" __declspec(dllexport) void onCreate(GameMemory * mem, HeapMemory * he
 	mem->rayTracer.spheres.push_back({{4.3,1,4}, 1.f, glm::vec3(0.8,0.4,0.9), 0.9, 0.9});
 	mem->rayTracer.pointLights.push_back({glm::vec3(-10, 2, 2), 4.f});
 
+	const char *names[6] =
+	{"resources/ocean/right.jpg",
+		"resources/ocean/left.jpg",
+		"resources/ocean/top.jpg",
+		"resources/ocean/bottom.jpg",
+		"resources/ocean/front.jpg",
+		"resources/ocean/back.jpg"};
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (!mem->rayTracer.skyBox.textures[i].loadTexture(names[i])) 
+		{
+			console->elog("error loaging textures");
+		};
+	}
 	
 }
 
@@ -195,6 +210,20 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 		lastMousePos = mousePos;
 	}
 
+	int maxRays = 5;
+	{
+		static bool toggle = false;
+
+		if (input->keyBoard[Button::P].released)
+		{
+			toggle = !toggle;
+		}
+		if (toggle)
+		{
+			maxRays = 1;
+		}
+	}
+
 	float fov = glm::radians(60.f);
 	float exposure = 1.0f;
 
@@ -202,26 +231,28 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 	auto xRotationMatrix = glm::rotate(Xrotation, glm::vec3{1.f,0.f,0});
 	auto lookMatrix = yRotationMatrix * xRotationMatrix;
 
-
-	for (int j = 0; j < h; j++)
 	{
-		for (int i = 0; i < w; i++)
+		float t = tan(fov / 2.);
+
+		for (int j = 0; j < h; j++)
 		{
-			float x = (2 * (i + 0.5) / (float)w - 1) * tan(fov / 2.) * w / (float)h;
-			float y = -(2 * (j + 0.5) / (float)h - 1) * tan(fov / 2.);
-			glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
-			dir = glm::normalize(lookMatrix * glm::vec4(dir,0));
-			
-			auto color = mem->rayTracer.renderRay(pos, dir, 5);
+			for (int i = 0; i < w; i++)
+			{
+				float x = (2 * (i + 0.5) / (float)w - 1) * t * w / (float)h;
+				float y = -(2 * (j + 0.5) / (float)h - 1) * t;
+				glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
+				dir = glm::normalize(lookMatrix * glm::vec4(dir, 0));
 
-			//hdr tone mapping
-			color = glm::vec3(1.f) - exp(-color * exposure);
+				auto color = mem->rayTracer.renderRay(pos, dir, maxRays);
 
-			windowBuffer->drawAt(i, j, color.r, color.g, color.b);
-			
+				//hdr tone mapping
+				color = glm::vec3(1.f) - exp(-color * exposure);
+
+				windowBuffer->drawAt(i, j, color.r, color.g, color.b);
+
+			}
 		}
 	}
-	
 
 }
 

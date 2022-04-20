@@ -168,6 +168,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Phisics.cpp" />
     <ClCompile Include="RayTracer.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\windowsPlatformLayer\buildConfig.h" />
@@ -178,6 +179,7 @@
     <ClInclude Include="lights.h" />
     <ClInclude Include="Phisics.h" />
     <ClInclude Include="rayTracer.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

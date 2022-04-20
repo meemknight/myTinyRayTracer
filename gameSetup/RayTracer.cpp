@@ -161,7 +161,7 @@ inline vec3 renderingEquation(glm::vec3 V, glm::vec3 L, glm::vec3 N, glm::vec3 b
 glm::vec3 RayTracer::renderRay(glm::vec3 origin, glm::vec3 direction, int depth)
 {
 
-	if (depth <= 0) { return skyColor; }
+	if (depth <= 0) { return skyBox.sample(direction); }
 	
 	auto ray = rayCast(origin, direction);
 
@@ -172,7 +172,7 @@ glm::vec3 RayTracer::renderRay(glm::vec3 origin, glm::vec3 direction, int depth)
 
 		glm::vec3 sphereNormal = normalize(ray.intersectPoint - s.center);
 
-		vec3 irradiance = skyColor; //ambient
+		vec3 irradiance = {}; //ambient //todo convolute skybox
 
 		for (auto light : pointLights)
 		{
@@ -223,7 +223,7 @@ glm::vec3 RayTracer::renderRay(glm::vec3 origin, glm::vec3 direction, int depth)
 
 	}else
 	{
-		return skyColor;
+		return skyBox.sample(direction);
 	}
 
 }
