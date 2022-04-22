@@ -138,6 +138,8 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 	static float Yrotation = 0.f;
 	static float Xrotation = 0.f;
 
+	static bool render = false;
+	if(!render)
 	{
 		glm::vec3 moveVector{};
 
@@ -179,6 +181,7 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 
 	}
 
+	if(!render)
 	{
 		constexpr float PI = 3.1415926;
 		
@@ -210,19 +213,25 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 		lastMousePos = mousePos;
 	}
 
-	int maxRays = 5;
 	{
-		static bool toggle = false;
 
 		if (input->keyBoard[Button::P].released)
 		{
-			toggle = !toggle;
+			render = !render;
+			
+			mem->rayTracer.frameBuffer.clearAndResize(w, h);
+			mem->rayTracer.framebufferPositionI = 0;
+			mem->rayTracer.framebufferPositionJ = 0;
 		}
-		if (toggle)
+
+		if (render && mem->rayTracer.frameBuffer.w != w && mem->rayTracer.frameBuffer.h != h)
 		{
-			maxRays = 1;
+			mem->rayTracer.frameBuffer.clearAndResize(w, h);
+			mem->rayTracer.framebufferPositionI = 0;
+			mem->rayTracer.framebufferPositionJ = 0;
 		}
 	}
+
 
 	float fov = glm::radians(60.f);
 	float exposure = 1.0f;
@@ -234,24 +243,72 @@ extern "C" __declspec(dllexport) void gameLogic(GameInput * input, GameMemory * 
 	{
 		float t = tan(fov / 2.);
 
-		for (int j = 0; j < h; j++)
+		if (render)
 		{
-			for (int i = 0; i < w; i++)
+			constexpr int maxCount = 1000;
+			int currentCount = 0;
+
+			for (; mem->rayTracer.framebufferPositionJ < h; mem->rayTracer.framebufferPositionJ++)
 			{
-				float x = (2 * (i + 0.5) / (float)w - 1) * t * w / (float)h;
-				float y = -(2 * (j + 0.5) / (float)h - 1) * t;
-				glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
-				dir = glm::normalize(lookMatrix * glm::vec4(dir, 0));
+				for (; mem->rayTracer.framebufferPositionI < w; mem->rayTracer.framebufferPositionI++)
+				{
+					float x = (2 * (mem->rayTracer.framebufferPositionI + 0.5) / (float)w - 1) * t * w / (float)h;
+					float y = -(2 * (mem->rayTracer.framebufferPositionJ + 0.5) / (float)h - 1) * t;
+					glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
+					dir = glm::normalize(lookMatrix * glm::vec4(dir, 0));
 
-				auto color = mem->rayTracer.renderRay(pos, dir, maxRays);
+					glm::vec3 color{};
+					color = mem->rayTracer.renderRay(pos, dir, 100);
 
-				//hdr tone mapping
-				color = glm::vec3(1.f) - exp(-color * exposure);
+					//hdr tone mapping
+					color = glm::vec3(1.f) - exp(-color * exposure);
 
-				windowBuffer->drawAt(i, j, color.r, color.g, color.b);
+					mem->rayTracer.frameBuffer.setDataUnsafe(mem->rayTracer.framebufferPositionI, mem->rayTracer.framebufferPositionJ,
+						color.r * 255, color.g * 255, color.b * 255);
 
+					currentCount++;
+
+					if (currentCount > maxCount) { break; }
+				}
+				if (mem->rayTracer.framebufferPositionI >= w)
+				{
+					mem->rayTracer.framebufferPositionI = 0;
+				}
+				if (currentCount > maxCount) { break; }
+			}
+
+			for (int j = 0; j < h; j++)
+			{
+				for (int i = 0; i < w; i++)
+				{
+					windowBuffer->drawAt(i, j, mem->rayTracer.frameBuffer.getDataUnsafe(i,j));
+				}
 			}
 		}
+		else
+		{
+			for (int j = 0; j < h; j++)
+			{
+				for (int i = 0; i < w; i++)
+				{
+					float x = (2 * (i + 0.5) / (float)w - 1) * t * w / (float)h;
+					float y = -(2 * (j + 0.5) / (float)h - 1) * t;
+					glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
+					dir = glm::normalize(lookMatrix * glm::vec4(dir, 0));
+
+					glm::vec3 color{};
+					color = mem->rayTracer.renderRayCheap(pos, dir, 1);
+
+					//hdr tone mapping
+					color = glm::vec3(1.f) - exp(-color * exposure);
+
+					windowBuffer->drawAt(i, j, color.r, color.g, color.b);
+
+				}
+			}
+		}
+
+		
 	}
 
 }

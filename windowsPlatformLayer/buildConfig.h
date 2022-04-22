@@ -12,7 +12,7 @@
 #define ENABLE_CONSOLE 1	//this is the internal console that you can open with alt + `
 
 #define ALLOW_ONLY_ONE_INSTANCE 1	//allows only one instance open of this program. You need it if you use hot code reloading
-#define UNIQUE_NAME "example"		//set this to your program name or sthing unique if you use ALLOW_ONLY_ONE_INSTANCE
+#define UNIQUE_NAME "tinyRenderer"		//set this to your program name or sthing unique if you use ALLOW_ONLY_ONE_INSTANCE
 
 
 #define NOT_RECORD_DELTATIME 0	//when recording and playing back the input you have the option to also record deltaTime values

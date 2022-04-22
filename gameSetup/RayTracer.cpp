@@ -227,3 +227,72 @@ glm::vec3 RayTracer::renderRay(glm::vec3 origin, glm::vec3 direction, int depth)
 	}
 
 }
+
+glm::vec3 RayTracer::renderRayCheap(glm::vec3 origin, glm::vec3 direction, int depth)
+{
+	if (depth <= 0) { return skyBox.sample(direction); }
+
+	auto ray = rayCast(origin, direction);
+
+	if (ray.distance != INFINITY)
+	{
+
+		auto &s = spheres[ray.sphereId];
+
+		glm::vec3 sphereNormal = normalize(ray.intersectPoint - s.center);
+
+		vec3 irradiance = {}; //ambient //todo convolute skybox
+
+		for (auto light : pointLights)
+		{
+
+			//check if ocluded by geometry
+			glm::vec3 toLight = glm::normalize(light.position - ray.intersectPoint);
+
+			bool occluded = rayCastAny(ray.intersectPoint, toLight);
+
+			for (int sphere = 0; sphere < spheres.size(); sphere++)
+			{
+				if (sphere == ray.sphereId) { continue; }
+
+
+				auto rez = spheres[sphere].rayIntersect(ray.intersectPoint, toLight);
+
+				if (rez != INFINITY)
+				{
+					occluded = true;
+					break;
+				}
+
+			}
+
+			if (occluded) { continue; }
+
+			glm::vec3 L = normalize(light.position - ray.intersectPoint);
+			glm::vec3 V = -direction;
+			glm::vec3 H = normalize(L + V);
+			glm::vec3 N = sphereNormal;
+
+			irradiance += renderingEquation(V, L, N, s.color, s.roughness, s.metallic, vec3(light.intensity));
+		}
+
+		glm::vec3 R = glm::reflect(direction, sphereNormal);
+
+		auto reflectColor = renderRay(ray.intersectPoint, sphereNormal, depth - 1);
+		auto irradianceColor = s.color * irradiance;
+
+
+		vec3 H = normalize(-direction + R);
+
+		vec3 F0 = vec3(0.04);
+		F0 = glm::mix(F0, s.color, s.metallic);
+		auto fresnel = fresnelSchlickVector(glm::max(dot(H, -direction), 0.f), F0);
+
+		return glm::mix(irradianceColor, reflectColor, fresnel);
+
+	}
+	else
+	{
+		return skyBox.sample(direction);
+	}
+}

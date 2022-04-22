@@ -14,6 +14,10 @@ struct Texture
 
 	glm::vec3 clampSample(glm::vec2 uv);
 	glm::vec3 clampSample(float x, float y);
+	glm::ivec3 getDataUnsafe(int x, int y);
+	void setDataUnsafe(int x, int y, unsigned char r, unsigned char g, unsigned char b);
+
+	void clearAndResize(int w, int h);
 };
 
 

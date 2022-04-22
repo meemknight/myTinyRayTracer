@@ -41,6 +41,33 @@ glm::vec3 Texture::clampSample(float x, float y)
 	);
 }
 
+glm::ivec3 Texture::getDataUnsafe(int x, int y)
+{
+	return glm::vec3(
+		data[(x + w * y) * 3 + 0],
+		data[(x + w * y) * 3 + 1],
+		data[(x + w * y) * 3 + 2]
+	);
+}
+
+void Texture::setDataUnsafe(int x, int y, unsigned char r, unsigned char g, unsigned char b)
+{
+	data[(x + w * y) * 3 + 0] = r;
+	data[(x + w * y) * 3 + 1] = g;
+	data[(x + w * y) * 3 + 2] = b;
+}
+
+void Texture::clearAndResize(int w, int h)
+{
+	freeTexture();
+
+	this->w = w;
+	this->h = h;
+
+	data = new unsigned char[w * h * 3]{};
+
+}
+
 glm::vec3 SkyBox::sample(glm::vec3 direction)
 {
 	direction = glm::normalize(direction);

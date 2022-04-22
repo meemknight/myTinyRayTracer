@@ -23,7 +23,12 @@ struct RayTracer
 	RayIntersectRezult rayCast(glm::vec3 origin, glm::vec3 direction);
 	bool rayCastAny(glm::vec3 origin, glm::vec3 direction);
 	glm::vec3 renderRay(glm::vec3 origin, glm::vec3 direction, int depth);
+	glm::vec3 renderRayCheap(glm::vec3 origin, glm::vec3 direction, int depth);
 
 	SkyBox skyBox;
+
+	Texture frameBuffer;
+	unsigned int framebufferPositionI = 0;
+	unsigned int framebufferPositionJ = 0;
 
 };

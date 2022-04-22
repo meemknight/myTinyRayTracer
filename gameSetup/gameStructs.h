@@ -165,7 +165,7 @@ struct HeapMemory
 {
 
 	FreeListAllocator allocator;
-	char memory[MB(10)];
+	char memory[MB(300)];
 		
 };
 
