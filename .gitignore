@@ -387,10 +387,6 @@ MigrationBackup/
 
 # End of https://www.gitignore.io/api/c++,visualstudio
 
-# Dependences 
-dependences/
-dependences
-
 # Builds
 Debug/
 Release/
